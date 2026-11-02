@@ -326,7 +326,19 @@ function computeStats(books, orders) {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(UPLOAD_DIR));
-app.use(express.static(PUBLIC_DIR));
+
+if (fs.existsSync(PUBLIC_DIR)) {
+  app.use(express.static(PUBLIC_DIR));
+}
+
+app.get('/', (_req, res) => {
+  res.json({
+    name: 'MyTechShelf API',
+    status: 'running',
+    message: 'Backend is running successfully.',
+    endpoints: ['/api/books', '/api/orders', '/api/admin/login', '/api/payment-settings']
+  });
+});
 
 app.get('/api/books', async (req, res) => {
   const category = String(req.query.category || '').trim();
@@ -609,6 +621,14 @@ app.get('/book/:id', (_req, res) => {
 app.use((req, res) => {
   const requestedPath = req.originalUrl;
 
+  if (!fs.existsSync(PUBLIC_DIR)) {
+    return res.status(404).json({
+      message: 'Route not found for this backend-only deployment.',
+      requestedPath,
+      note: 'Frontend is served from a separate GitHub Pages repo.'
+    });
+  }
+
   if (requestedPath === '/admin.html') {
     return res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
   }
@@ -653,7 +673,16 @@ app.use((req, res) => {
     return res.sendFile(path.join(PUBLIC_DIR, 'book.html'));
   }
 
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  const indexFile = path.join(PUBLIC_DIR, 'index.html');
+  if (fs.existsSync(indexFile)) {
+    return res.sendFile(indexFile);
+  }
+
+  return res.status(404).json({
+    message: 'Frontend file not found in this backend-only repo.',
+    requestedPath,
+    note: 'The frontend should be deployed separately on GitHub Pages.'
+  });
 });
 
 ensureDirectories();
