@@ -1,0 +1,126 @@
+[
+  {
+    "_id": "6ae5dfbc3897db8fdd5dc1f7",
+    "id": "book-1793449916019",
+    "title": "aji",
+    "author": "yas",
+    "description": "hjhjh",
+    "price": 1000,
+    "category": "Programming Books",
+    "image": "/uploads/1793449906234-2bcadfebb29e2.png",
+    "featured": false,
+    "stock": 25,
+    "rating": 4.8,
+    "reviews": [
+      {
+        "name": "Aaryan",
+        "rating": 5,
+        "comment": "Very clear, practical, and beginner-friendly."
+      },
+      {
+        "name": "Nisha",
+        "rating": 4,
+        "comment": "Helpful examples and strong career value."
+      },
+      {
+        "name": "Rithik",
+        "rating": 5,
+        "comment": "Perfect for a fast learning boost."
+      }
+    ],
+    "createdAt": "2026-10-31T12:31:56.019Z"
+  },
+  {
+    "_id": "6ae5dfa33897db8fdd5dc1f4",
+    "id": "book-3",
+    "title": "UI/UX Design Blueprint",
+    "author": "K. Harini",
+    "description": "Create elegant user experiences with high-converting interfaces, wireframes, and user research methods.",
+    "price": 449,
+    "category": "Programming Books",
+    "image": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80",
+    "featured": true,
+    "stock": 14,
+    "rating": 4.9,
+    "reviews": [
+      {
+        "name": "Aaryan",
+        "rating": 5,
+        "comment": "Very clear, practical, and beginner-friendly."
+      },
+      {
+        "name": "Nisha",
+        "rating": 4,
+        "comment": "Helpful examples and strong career value."
+      },
+      {
+        "name": "Rithik",
+        "rating": 5,
+        "comment": "Perfect for a fast learning boost."
+      }
+    ],
+    "createdAt": "2026-10-31T12:31:30.970Z"
+  },
+  {
+    "_id": "6ae5dfa33897db8fdd5dc1f5",
+    "id": "book-4",
+    "title": "Interview Crackers for Developers",
+    "author": "N. Jayanth",
+    "description": "Practice real interview questions, coding patterns, and communication strategies for modern product teams.",
+    "price": 399,
+    "category": "Interview Practice Books",
+    "image": "https://images.unsplash.com/photo-1516321165247-4aa89a48be28?auto=format&fit=crop&w=900&q=80",
+    "featured": false,
+    "stock": 20,
+    "rating": 4.8,
+    "reviews": [
+      {
+        "name": "Aaryan",
+        "rating": 5,
+        "comment": "Very clear, practical, and beginner-friendly."
+      },
+      {
+        "name": "Nisha",
+        "rating": 4,
+        "comment": "Helpful examples and strong career value."
+      },
+      {
+        "name": "Rithik",
+        "rating": 5,
+        "comment": "Perfect for a fast learning boost."
+      }
+    ],
+    "createdAt": "2026-10-31T12:31:30.970Z"
+  },
+  {
+    "_id": "6ae5dfa33897db8fdd5dc1f2",
+    "id": "book-1",
+    "title": "Full Stack Web Developer Bootcamp",
+    "author": "A. Raghavan",
+    "description": "Master HTML, CSS, JavaScript, backend logic, and deployment with hands-on projects for real-world work.",
+    "price": 499,
+    "category": "Programming Books",
+    "image": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80",
+    "featured": true,
+    "stock": 25,
+    "rating": 4.8,
+    "reviews": [
+      {
+        "name": "Aaryan",
+        "rating": 5,
+        "comment": "Very clear, practical, and beginner-friendly."
+      },
+      {
+        "name": "Nisha",
+        "rating": 4,
+        "comment": "Helpful examples and strong career value."
+      },
+      {
+        "name": "Rithik",
+        "rating": 5,
+        "comment": "Perfect for a fast learning boost."
+      }
+    ],
+    "createdAt": "2026-10-31T12:31:30.965Z"
+  }
+]
