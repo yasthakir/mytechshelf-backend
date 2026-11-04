@@ -412,6 +412,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(UPLOAD_DIR));
 app.use(express.static(PUBLIC_DIR));
 
+function sendPublicFileOrFallback(fileName, res) {
+  const filePath = path.join(PUBLIC_DIR, fileName);
+
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  }
+
+  return res.status(404).json({
+    message: 'This backend serves API data only. The frontend is hosted separately from GitHub Pages.'
+  });
+}
+
 app.get('/api/books', async (req, res) => {
   const category = String(req.query.category || '').trim();
   const std = String(req.query.std || '').trim();
@@ -665,101 +677,108 @@ app.patch('/api/orders/:id/sent-pdf', requireAdmin, async (req, res) => {
 });
 
 app.get('/admin', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+  sendPublicFileOrFallback('admin.html', res);
 });
 
 app.get('/admin/login', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+  sendPublicFileOrFallback('admin.html', res);
 });
 
 app.get('/admin/dashboard', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'admin-dashboard.html'));
+  sendPublicFileOrFallback('admin-dashboard.html', res);
 });
 
 app.get('/admin/books', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'admin-books.html'));
+  sendPublicFileOrFallback('admin-books.html', res);
 });
 
 app.get('/admin/buyers', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'admin-buyers.html'));
+  sendPublicFileOrFallback('admin-buyers.html', res);
 });
 
 app.get('/admin/payment', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'admin-payment.html'));
+  sendPublicFileOrFallback('admin-payment.html', res);
 });
 
 app.get('/favorites', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'favorites.html'));
+  sendPublicFileOrFallback('favorites.html', res);
 });
 
 app.get('/more-books', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'more-books.html'));
+  sendPublicFileOrFallback('more-books.html', res);
 });
 
 app.get('/books', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'category-books.html'));
+  sendPublicFileOrFallback('category-books.html', res);
 });
 
 app.get('/cart', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'cart.html'));
+  sendPublicFileOrFallback('cart.html', res);
 });
 
 app.get('/checkout', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'checkout.html'));
+  sendPublicFileOrFallback('checkout.html', res);
 });
 
 app.get('/book/:id', (_req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'book.html'));
+  sendPublicFileOrFallback('book.html', res);
 });
 
 app.use((req, res) => {
   const requestedPath = req.originalUrl;
 
   if (requestedPath === '/admin.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+    return sendPublicFileOrFallback('admin.html', res);
   }
 
   if (requestedPath === '/admin-dashboard.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'admin-dashboard.html'));
+    return sendPublicFileOrFallback('admin-dashboard.html', res);
   }
 
   if (requestedPath === '/admin-books.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'admin-books.html'));
+    return sendPublicFileOrFallback('admin-books.html', res);
   }
 
   if (requestedPath === '/admin-buyers.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'admin-buyers.html'));
+    return sendPublicFileOrFallback('admin-buyers.html', res);
   }
 
   if (requestedPath === '/admin-payment.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'admin-payment.html'));
+    return sendPublicFileOrFallback('admin-payment.html', res);
   }
 
   if (requestedPath === '/more-books.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'more-books.html'));
+    return sendPublicFileOrFallback('more-books.html', res);
   }
 
   if (requestedPath === '/favorites.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'favorites.html'));
+    return sendPublicFileOrFallback('favorites.html', res);
   }
 
   if (requestedPath === '/category-books.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'category-books.html'));
+    return sendPublicFileOrFallback('category-books.html', res);
   }
 
   if (requestedPath === '/cart.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'cart.html'));
+    return sendPublicFileOrFallback('cart.html', res);
   }
 
   if (requestedPath === '/checkout.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'checkout.html'));
+    return sendPublicFileOrFallback('checkout.html', res);
   }
 
   if (requestedPath === '/book.html') {
-    return res.sendFile(path.join(PUBLIC_DIR, 'book.html'));
+    return sendPublicFileOrFallback('book.html', res);
   }
 
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  const indexPath = path.join(PUBLIC_DIR, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+
+  return res.status(404).json({
+    message: 'This backend serves API data only. The frontend is hosted separately from GitHub Pages.'
+  });
 });
 
 ensureDirectories();
