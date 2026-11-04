@@ -4,12 +4,13 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const QRCode = require('qrcode');
+const cloudinary = require('cloudinary').v2;
 const { MongoClient } = require('mongodb');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
-const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
+const PUBLIC_DIR = fs.existsSync(path.join(ROOT_DIR, 'public')) ? path.join(ROOT_DIR, 'public') : ROOT_DIR;
 const DATA_DIR = path.join(ROOT_DIR, 'data');
 const BOOKS_FILE = path.join(DATA_DIR, 'books.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
@@ -30,6 +31,19 @@ const ADMIN_ACCOUNT = {
 };
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://yasminefathima0401_db_user:9Yn0Xsc1IHegupT3@cluster0.jghuucp.mongodb.net/infinity-software?retryWrites=true&w=majority';
 const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME || 'infinity-software';
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
+const BACKEND_PUBLIC_URL = process.env.BACKEND_PUBLIC_URL || process.env.PUBLIC_BASE_URL || process.env.RENDER_EXTERNAL_URL || (process.env.NODE_ENV === 'production' || process.env.RENDER ? 'https://mytechshelf-backend.onrender.com' : 'http://localhost:3000');
+
+if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET) {
+  cloudinary.config({
+    cloud_name: CLOUDINARY_CLOUD_NAME,
+    api_key: CLOUDINARY_API_KEY,
+    api_secret: CLOUDINARY_API_SECRET,
+    secure: true
+  });
+}
 
 let mongoClient = null;
 
@@ -164,8 +178,60 @@ function normalizeBook(book) {
     reviews,
     featured: Boolean(book.featured),
     stock: Number(book.stock || 25),
-    price: Number(book.price || 0)
+    price: Number(book.price || 0),
+    std: String(book.std || '').trim(),
+    subject: String(book.subject || '').trim(),
+    image: normalizeImageUrl(book.image)
   };
+}
+
+function normalizeImageUrl(value) {
+  if (!value || typeof value !== 'string') {
+    return value || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80';
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value;
+  }
+
+  if (!value.startsWith('/')) {
+    return value;
+  }
+
+  const base = BACKEND_PUBLIC_URL || 'http://localhost:3000';
+  return `${base.replace(/\/$/, '')}${value}`;
+}
+
+async function uploadBookImage(file) {
+  if (!file) {
+    return '';
+  }
+
+  if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET) {
+    try {
+      const result = await cloudinary.uploader.upload(file.path, {
+        folder: 'mytechshelf/books',
+        transformation: [{ quality: 'auto', fetch_format: 'auto' }]
+      });
+
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+
+      return result.secure_url || result.url || '';
+    } catch (error) {
+      console.warn('Cloudinary upload failed, falling back to local upload path.', error.message);
+    }
+  }
+
+  const relativePath = `/uploads/${file.filename}`;
+  const localUrl = normalizeImageUrl(relativePath);
+
+  if (fs.existsSync(file.path)) {
+    fs.unlinkSync(file.path);
+  }
+
+  return localUrl;
 }
 
 function limitVisibleBooks(books, limit = MAX_BOOKS_VISIBLE) {
@@ -344,26 +410,25 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(UPLOAD_DIR));
-
-if (fs.existsSync(PUBLIC_DIR)) {
-  app.use(express.static(PUBLIC_DIR));
-}
-
-app.get('/', (_req, res) => {
-  res.json({
-    name: 'MyTechShelf API',
-    status: 'running',
-    message: 'Backend is running successfully.',
-    endpoints: ['/api/books', '/api/orders', '/api/admin/login', '/api/payment-settings']
-  });
-});
+app.use(express.static(PUBLIC_DIR));
 
 app.get('/api/books', async (req, res) => {
   const category = String(req.query.category || '').trim();
+  const std = String(req.query.std || '').trim();
+  const subject = String(req.query.subject || '').trim();
   const sourceBooks = await getBooksFromStore({ limit: 0 });
-  const filteredBooks = category
+
+  let filteredBooks = category
     ? sourceBooks.filter((book) => book.category === category)
     : sourceBooks.slice(0, MAX_BOOKS_VISIBLE);
+
+  if (std) {
+    filteredBooks = filteredBooks.filter((book) => String(book.std || '').trim() === std);
+  }
+
+  if (subject) {
+    filteredBooks = filteredBooks.filter((book) => String(book.subject || '').trim().toLowerCase() === subject.toLowerCase());
+  }
 
   res.json(filteredBooks);
 });
@@ -490,13 +555,23 @@ app.get('/api/qr', async (req, res) => {
 
 app.post('/api/books', upload.array('images', 10), async (req, res) => {
   const books = await getBooksFromStore({ limit: 0 });
-  const { title, author, description, price, category, imageUrl, std } = req.body;
+  const { title, author, description, price, category, imageUrl, std, subject } = req.body;
 
   if (!title || !author || !description || !price) {
     return res.status(400).json({ message: 'Book title, author, description, and price are required.' });
   }
 
   const normalizedCategory = String(category || 'Programming Books').trim();
+  const normalizedStd = String(std || '').trim();
+  const normalizedSubject = String(subject || '').trim();
+
+  if ((normalizedCategory === 'School Notes' || normalizedCategory === 'Competitive Exam Notes') && (!normalizedStd || !normalizedSubject)) {
+    return res.status(400).json({ message: 'Please select the class and subject for this school or competitive notes book.' });
+  }
+
+  const uploadedImageFile = req.files && req.files[0];
+  const uploadedImageUrl = uploadedImageFile ? await uploadBookImage(uploadedImageFile) : '';
+
   const nextBook = normalizeBook({
     id: `book-${Date.now()}`,
     title: title.trim(),
@@ -504,8 +579,9 @@ app.post('/api/books', upload.array('images', 10), async (req, res) => {
     description: description.trim(),
     price: Number(price),
     category: normalizedCategory,
-    std: String(std || '').trim(),
-    image: req.files && req.files.length ? `/uploads/${req.files[0].filename}` : (imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80'),
+    std: normalizedStd,
+    subject: normalizedSubject,
+    image: uploadedImageUrl || normalizeImageUrl(imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80'),
     featured: false,
     stock: 25,
     rating: 4.8,
@@ -639,14 +715,6 @@ app.get('/book/:id', (_req, res) => {
 app.use((req, res) => {
   const requestedPath = req.originalUrl;
 
-  if (!fs.existsSync(PUBLIC_DIR)) {
-    return res.status(404).json({
-      message: 'Route not found for this backend-only deployment.',
-      requestedPath,
-      note: 'Frontend is served from a separate GitHub Pages repo.'
-    });
-  }
-
   if (requestedPath === '/admin.html') {
     return res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
   }
@@ -691,16 +759,7 @@ app.use((req, res) => {
     return res.sendFile(path.join(PUBLIC_DIR, 'book.html'));
   }
 
-  const indexFile = path.join(PUBLIC_DIR, 'index.html');
-  if (fs.existsSync(indexFile)) {
-    return res.sendFile(indexFile);
-  }
-
-  return res.status(404).json({
-    message: 'Frontend file not found in this backend-only repo.',
-    requestedPath,
-    note: 'The frontend should be deployed separately on GitHub Pages.'
-  });
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
 ensureDirectories();
